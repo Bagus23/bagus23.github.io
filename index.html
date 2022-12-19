@@ -1,0 +1,49 @@
+<html>
+<head>
+  <title>Harga Gas Polygon</title>
+</head>
+<body>
+  <h1>Harga Gas Polygon Saat Ini</h1>
+  <p id="price">Loading...</p>
+  <script>
+    // Fungsi untuk mengambil harga gas Polygon saat ini
+    async function getPolygonGasPrice() {
+      // Cek apakah harga gas tersimpan di cache
+      let gasPrice = localStorage.getItem('gasPrice');
+
+      // Jika harga gas tersimpan di cache, gunakan harga gas tersebut
+      if (gasPrice) {
+        updatePrice(gasPrice);
+        return;
+      }
+
+      // Jika harga gas tidak tersimpan di cache, ambil harga gas dari server API
+      try {
+        // Array dengan API yang akan digunakan
+        const apiUrls = [
+          'https://gasprice.polygon.io/v1/gas/currentPrice',
+          'https://ethgasstation.info/json/ethgasAPI.json',
+          'https://api.etherscan.io/api?module=gastracker&action=gasoracle',
+          'https://nominum.eth.link/api/v1/gas_prices',
+          'https://ethgasstation.info/json/predictTable.json'
+        ];
+
+        // Proses setiap API secara bergantian
+        for (const apiUrl of apiUrls) {
+          try {
+            // Kirim permintaan HTTP ke API yang menyediakan harga gas Polygon
+            const response = await fetch(apiUrl);
+
+            // Parsing data JSON yang diterima dari API
+            const data = await response.json();
+
+            // Ambil harga gas dari data JSON
+            let newGasPrice;
+            if (apiUrl === apiUrls[0]) {
+              newGasPrice = data.currentPrice / 1000000000;
+            } else if (apiUrl === apiUrls[1]) {
+              newGasPrice = data.average / 10;
+            } else if (apiUrl === apiUrls[2]) {
+              newGasPrice = data.result.safeLow / 10;
+            } else if (apiUrl === apiUrls[3]) {
+              newGasPrice = data.safeLow / 100
