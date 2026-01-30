@@ -2,27 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Ethereum Gas Tracker</title>
+  <title>Multichain Gas Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #020617;
+      --bg: #020617;
+      --card: #020617aa;
       --text: #e5e7eb;
       --muted: #94a3b8;
       --accent: #38bdf8;
+      --low: #4ade80;
+      --avg: #fbbf24;
+      --fast: #fb7185;
     }
 
     body {
       margin: 0;
+      min-height: 100vh;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       background: radial-gradient(circle at top, #020617, #000);
       color: var(--text);
-      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
     .container {
@@ -33,8 +36,19 @@
 
     h1 {
       text-align: center;
+      margin-bottom: 14px;
       font-size: 1.5rem;
-      margin-bottom: 20px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 14px;
+      background: #020617;
+      color: var(--text);
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      font-size: 14px;
     }
 
     .card {
@@ -42,14 +56,13 @@
       border: 1px solid #1e293b;
       border-radius: 14px;
       padding: 16px;
-      margin-bottom: 14px;
       box-shadow: 0 10px 30px rgba(0,0,0,.4);
     }
 
     .row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 10px 0;
       border-bottom: 1px solid #1e293b;
     }
 
@@ -61,13 +74,9 @@
       color: var(--muted);
     }
 
-    .value {
-      font-weight: 600;
-    }
-
-    .fast { color: #fb7185; }
-    .avg { color: #fbbf24; }
-    .low { color: #4ade80; }
+    .low { color: var(--low); font-weight: 600; }
+    .avg { color: var(--avg); font-weight: 600; }
+    .fast { color: var(--fast); font-weight: 600; }
 
     .footer {
       text-align: center;
@@ -80,45 +89,64 @@
 
 <body>
   <div class="container">
-    <h1>⛽ Ethereum Gas Price</h1>
+    <h1>⛽ Multichain Gas Tracker</h1>
+
+    <select id="chain" onchange="updateGas()">
+      <option value="1">Ethereum (Mainnet)</option>
+      <option value="42161">Arbitrum</option>
+      <option value="10">Optimism</option>
+      <option value="137">Polygon</option>
+      <option value="56">BNB Chain</option>
+    </select>
 
     <div class="card">
       <div class="row">
         <span class="label">Low</span>
-        <span id="low" class="value low">—</span>
+        <span id="low" class="low">—</span>
       </div>
       <div class="row">
         <span class="label">Average</span>
-        <span id="avg" class="value avg">—</span>
+        <span id="avg" class="avg">—</span>
       </div>
       <div class="row">
         <span class="label">Fast</span>
-        <span id="fast" class="value fast">—</span>
+        <span id="fast" class="fast">—</span>
       </div>
     </div>
 
     <div class="footer">
-      Auto refresh every 10 seconds
+      Auto refresh every 10 seconds · Etherscan API V2
     </div>
   </div>
 
   <script>
+    const API_KEY = "JB1MEBT5DPT34JS67BZMQN1YZ1N9K1JW31";
+    const BASE_URL = "https://api.etherscan.io/v2/api";
+
     async function updateGas() {
+      const chainId = document.getElementById("chain").value;
+
       try {
         const res = await fetch(
-          "https://api.etherscan.io/api?module=gastracker&action=gasoracle"
+          `${BASE_URL}?chainid=${chainId}&module=gastracker&action=gasoracle&apikey=${API_KEY}`
         );
-        const data = await res.json();
+        const json = await res.json();
+
+        if (json.status !== "1") {
+          throw new Error(json.message);
+        }
+
+        const gas = json.result;
 
         document.getElementById("low").textContent =
-          data.result.SafeGasPrice + " Gwei";
+          gas.SafeGasPrice + " Gwei";
         document.getElementById("avg").textContent =
-          data.result.ProposeGasPrice + " Gwei";
+          gas.ProposeGasPrice + " Gwei";
         document.getElementById("fast").textContent =
-          data.result.FastGasPrice + " Gwei";
+          gas.FastGasPrice + " Gwei";
 
-      } catch (err) {
-        console.error("Failed to fetch gas price", err);
+      } catch (e) {
+        console.error("Gas fetch error:", e);
       }
     }
 
