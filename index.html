@@ -1,76 +1,129 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Harga Gas Ethereum</title>
-  <meta http-equiv="refresh" content="5">
+  <meta charset="UTF-8" />
+  <title>Ethereum Gas Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
+    :root {
+      --bg: #0f172a;
+      --card: #020617;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(circle at top, #020617, #000);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
+
+    .container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+
     h1 {
-      color: #333;
       text-align: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
     }
-    p {
-      font-size: 18px;
-      margin: 20px 0;
+
+    .card {
+      background: linear-gradient(180deg, #020617, #020617aa);
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
     }
-    table {
-      width: 80%;
-      margin: 20px auto;
-      border-collapse: collapse;
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #1e293b;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+
+    .row:last-child {
+      border-bottom: none;
     }
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
+
+    .label {
+      color: var(--muted);
+    }
+
+    .value {
+      font-weight: 600;
+    }
+
+    .fast { color: #fb7185; }
+    .avg { color: #fbbf24; }
+    .low { color: #4ade80; }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
     }
   </style>
 </head>
-<body>
-  <h1>Harga Gas Ethereum</h1>
-  <table id="price"></table>
 
-  <h1>Mempool</h1>
-  <p id="mempool"></p>
+<body>
+  <div class="container">
+    <h1>⛽ Ethereum Gas Price</h1>
+
+    <div class="card">
+      <div class="row">
+        <span class="label">Low</span>
+        <span id="low" class="value low">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Average</span>
+        <span id="avg" class="value avg">—</span>
+      </div>
+      <div class="row">
+        <span class="label">Fast</span>
+        <span id="fast" class="value fast">—</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Auto refresh every 10 seconds
+    </div>
+  </div>
 
   <script>
-    function updatePrice() {
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          var data = JSON.parse(this.responseText);
-          var low = data.safeLow / 10;
-          var average = data.average / 10;
-          var high = data.fast / 10;
-          var table = document.getElementById("price");
-          table.innerHTML =
-            "<tr><th>Low</th><td>" + low + " Gwei</td></tr>" +
-            "<tr><th>Average</th><td>" + average + " Gwei</td></tr>" +
-            "<tr><th>High</th><td>" + high + " Gwei</td></tr>";
-        }
-      };
-      xhttp.open("GET", "https://www.ethgasstation.info/json/ethgasAPI.json", true);
-      xhttp.send();
+    async function updateGas() {
+      try {
+        const res = await fetch(
+          "https://api.etherscan.io/api?module=gastracker&action=gasoracle"
+        );
+        const data = await res.json();
+
+        document.getElementById("low").textContent =
+          data.result.SafeGasPrice + " Gwei";
+        document.getElementById("avg").textContent =
+          data.result.ProposeGasPrice + " Gwei";
+        document.getElementById("fast").textContent =
+          data.result.FastGasPrice + " Gwei";
+
+      } catch (err) {
+        console.error("Failed to fetch gas price", err);
+      }
     }
 
-    function updateMempool() {
-      var xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("mempool").innerHTML = this.responseText;
-        }
-      };
-      xhttp.open("GET", "https://www.blockchain.com/eth/unconfirmed-transactions", true);
-      xhttp.send();
-    }
-
-    updatePrice();
-    updateMempool();
+    updateGas();
+    setInterval(updateGas, 10000);
   </script>
 </body>
 </html>
